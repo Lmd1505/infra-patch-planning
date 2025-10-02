@@ -1,0 +1,154 @@
+# infra-patch-planning
+
+Repositório com **templates e exemplos** para planejamento de patches em ambientes de infraestrutura.
+
+## 📌 Estrutura
+```
+infra-patch-planning/
+├── README.md                # Explica o projeto e como usar
+├── templates/
+│   ├── patch_plan_template.md   # Modelo em Markdown
+│   ├── checklist_template.md    # Checklist padrão de pré/mudança/rollback
+├── examples/
+│   ├── patch_plan_oct_nov_2025.pdf # Exemplo real (desafio)
+│   └── gantt_patch_schedule.png    # Cronograma Gantt
+└── scripts/
+    └── generate_gantt.py       # Script em Python para gerar cronograma visual
+```
+
+## 🚀 Objetivo
+Facilitar a criação de planos de patch estruturados, com:
+- Modelos prontos de planos (Markdown, Word, Excel)
+- Checklists de pré e pós mudança
+- Scripts para gerar cronogramas visuais (Gantt)
+- Exemplos reais
+
+## 📖 Como usar
+1. Copie o `patch_plan_template.md` e preencha com suas informações.
+2. Use o `checklist_template.md` para validar pré e pós mudanças.
+3. Execute o script `scripts/generate_gantt.py` para gerar o gráfico do cronograma.
+
+---
+
+# 📑 Templates
+
+## `templates/patch_plan_template.md`
+```markdown
+# Plano de Patch – [Período]
+**Responsável:** [Seu Nome]  
+**Período:** [Data início – Data fim]  
+**Versão:** 1.0
+
+---
+
+## 🔹 BLUF (Resumo)
+Escreva aqui em 5–7 linhas o resumo estratégico do plano.
+
+---
+
+## 🔹 Calendário de Patches
+| Data/Hora | Ambiente | Instância | Tipo de Patch | Reboot? | Responsável | Observações |
+|-----------|----------|-----------|---------------|---------|-------------|-------------|
+| [dd/mm]   | PROD     | node-01   | Kernel        | Sim     | Fulano      | Aviso 72h |
+
+---
+
+## 🔹 Checklist de Pré-Checagens
+- [ ] Backup validado
+- [ ] Aprovação do negócio
+- [ ] Baseline de métricas coletado
+- [ ] Recursos on-call confirmados
+- [ ] Aviso enviado ≥72h
+
+---
+
+## 🔹 Critérios de Rollback
+- Erros acima de 5% do tráfego por 10min
+- Latência 2x maior que baseline
+- Serviços não retornam após 3 tentativas
+- Smoke tests falharem
+
+Rollback: restaurar snapshot, reverter patch, validar saúde
+
+---
+
+## 🔹 Testes Pós-Mudança
+- Smoke tests (login, transações críticas)
+- Monitoramento (CPU, memória, erros)
+- Logs de aplicação
+- Integração com sistemas externos
+
+---
+
+## 🔹 Contatos de Emergência
+- Responsável Patch: [Nome / Contato]
+- DBA On-call: [Nome / Contato]
+- SRE On-call: [Nome / Contato]
+- Gerente de Negócio: [Nome / Contato]
+```
+
+---
+
+## `templates/checklist_template.md`
+```markdown
+# Checklist de Mudança (Patch)
+
+## 🔹 Pré-Mudança
+- [ ] Backup/snapshot criado e validado
+- [ ] Plano de rollback documentado
+- [ ] Aprovação do dono do processo
+- [ ] Baseline de métricas coletado
+- [ ] Aviso enviado ≥72h antes
+
+## 🔹 Execução
+- [ ] Nó removido do balanceador
+- [ ] Aplicação de patch iniciada
+- [ ] Reboot (se necessário)
+- [ ] Validação inicial concluída
+
+## 🔹 Pós-Mudança
+- [ ] Nó reinserido no balanceador
+- [ ] Smoke tests executados
+- [ ] Monitoramento normalizado
+- [ ] Logs sem novos erros críticos
+- [ ] Confirmação enviada ao negócio
+```
+
+---
+
+## `scripts/generate_gantt.py`
+```python
+import matplotlib.pyplot as plt
+import pandas as pd
+from datetime import datetime
+
+# Exemplo de patches
+patches = [
+    ("07/10/2025", "PROD - prod-pay-01 (Kernel)"),
+    ("14/10/2025", "PROD - prod-pay-02 (Kernel)"),
+    ("21/10/2025", "PROD - prod-orders-01 (DB)"),
+    ("28/10/2025", "PROD - prod-orders-02 (DB)"),
+    ("04/11/2025", "HOM - hom-pay-01 (Kernel)"),
+    ("11/11/2025", "HOM - hom-orders-01 (DB)"),
+    ("18/11/2025", "DEV - dev-pay-01 (Kernel)"),
+    ("25/11/2025", "DEV - dev-orders-01 (DB)"),
+]
+
+# Converter para DataFrame
+df = pd.DataFrame(patches, columns=["Data", "Atividade"])
+df["Data"] = pd.to_datetime(df["Data"], format="%d/%m/%Y")
+
+# Plot estilo Gantt simplificado
+plt.figure(figsize=(12, 6))
+plt.barh(df["Atividade"], [1]*len(df), left=df["Data"].map(datetime.toordinal), height=0.5, color="skyblue")
+
+# Ajustes visuais
+plt.xlabel("Data")
+plt.title("Cronograma de Patches (Exemplo)", fontsize=14, weight="bold")
+plt.xticks(df["Data"].map(datetime.toordinal), df["Data"].dt.strftime("%d/%m"), rotation=45)
+plt.grid(axis="x", linestyle="--", alpha=0.6)
+
+# Exportar gráfico
+plt.tight_layout()
+plt.savefig("gantt_patch_schedule.png")
+plt.show()
